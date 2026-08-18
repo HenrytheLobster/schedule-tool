@@ -1,0 +1,82 @@
+newsletters:
+  alexandria:
+    display_name: "Alexandria Newsletter"
+    repo_path: "/Volumes/SSD/Projects/alexandria-newsletter"
+    collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_collect.py"
+    write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_write.py"
+    seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_seo.py"
+    output_dir: "/Volumes/SSD/Projects/alexandria-newsletter/output"
+
+  newport:
+    display_name: "Newport Newsletter"
+    repo_path: "/Volumes/SSD/Projects/newport-newsletter"
+    collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_collect.py"
+    write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_write.py"
+    seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_seo.py"
+    output_dir: "/Volumes/SSD/Projects/newport-newsletter/output"
+
+  wasatch:
+    display_name: "Wasatch Newsletter"
+    repo_path: "/Volumes/SSD/Projects/wasatch-newsletter"
+    collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_collect.py"
+    write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_write.py"
+    seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_seo.py"
+    output_dir: "/Volumes/SSD/Projects/wasatch-newsletter/output"
+
+schedule:
+  timezone: "America/New_York"
+  slots:
+    monday-morning:
+      weekdays: [0]
+      hour: 5
+      minute: 0
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.seo", "wasatch.seo", "newport.seo"]
+    tuesday-seo:
+      weekdays: [1]
+      hour: 6
+      minute: 0
+      tasks: ["alexandria.seo", "wasatch.seo"]
+    wednesday-review:
+      weekdays: [2]
+      hour: 5
+      minute: 0
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.write", "wasatch.write", "newport.write", "alexandria.seo", "wasatch.seo"]
+    thursday-seo:
+      weekdays: [3]
+      hour: 6
+      minute: 0
+      tasks: ["alexandria.seo", "wasatch.seo"]
+    friday-seo:
+      weekdays: [4]
+      hour: 6
+      minute: 0
+      tasks: ["alexandria.seo", "wasatch.seo"]
+    saturday-seo:
+      weekdays: [5]
+      hour: 6
+      minute: 0
+      tasks: ["alexandria.seo", "wasatch.seo"]
+    sunday-seo:
+      weekdays: [6]
+      hour: 6
+      minute: 0
+      tasks: ["alexandria.seo", "wasatch.seo"]
+
+ollama:
+  host: "http://localhost:11434"
+  model: "gemma4:26b"
+  timeout: 1800
+
+alerts:
+  enabled: true
+  env_file: "/Volumes/SSD/Projects/alexandria-newsletter/.env"
+
+logging:
+  level: "INFO"
+  dir: "/Volumes/SSD/Projects/schedule-tool/logs"
+  retention_days: 30
+
+runner:
+  lock_file: "/Volumes/SSD/Projects/schedule-tool/scheduler.lock"
+  ledger_file: "/Volumes/SSD/Projects/schedule-tool/run_ledger.jsonl"
+  lock_stale_seconds: 21600
