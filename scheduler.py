@@ -73,7 +73,7 @@ def matching_slots(config: dict, now: datetime, logger: logging.Logger) -> list[
 
 def build_tasks(config: dict, now: datetime, logger: logging.Logger) -> tuple[list[dict], list[str]]:
     newsletters = config.get("newsletters", {})
-    timeout_seconds = int(config.get("ollama", {}).get("timeout", 1800))
+    timeout_seconds = int(config.get("ollama", {}).get("timeout", 3000))
     slots = matching_slots(config, now, logger)
 
     tasks: list[dict] = []

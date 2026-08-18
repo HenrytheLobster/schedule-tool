@@ -65,7 +65,7 @@ schedule:
 ollama:
   host: "http://localhost:11434"
   model: "gemma4:26b"
-  timeout: 1800
+  timeout: 3000
 
 alerts:
   enabled: true

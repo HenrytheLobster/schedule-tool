@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -15,6 +16,53 @@ from alerts import send_failure_alert
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 LOGS_DIR = SCRIPT_DIR / "logs"
+_TIMEOUT_KILL_GRACE_SECONDS = 5
+
+
+def _as_text(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _terminate_process_group(proc: subprocess.Popen, grace_seconds: float = _TIMEOUT_KILL_GRACE_SECONDS) -> None:
+    try:
+        child_pgid = os.getpgid(proc.pid)
+    except ProcessLookupError:
+        child_pgid = proc.pid
+
+    # Never signal the runner's own process group.
+    if child_pgid == os.getpgrp():
+        proc.terminate()
+        try:
+            proc.wait(timeout=grace_seconds)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        return
+
+    try:
+        os.killpg(child_pgid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+
+    try:
+        proc.wait(timeout=grace_seconds)
+    except subprocess.TimeoutExpired:
+        pass
+
+    try:
+        os.killpg(child_pgid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+    try:
+        proc.wait(timeout=grace_seconds)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
 
 
 def setup_logger(timestamp: str) -> logging.Logger:
@@ -149,69 +197,78 @@ def run_task(task: dict, logger: logging.Logger) -> dict:
     started = datetime.now()
     monotonic_started = time.monotonic()
 
-    try:
-        completed = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-            cwd=str(script_path.parent),
-            check=False,
-        )
-        duration = round(time.monotonic() - monotonic_started, 2)
-        stdout = completed.stdout.strip()
-        stderr = completed.stderr.strip()
+    with subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(script_path.parent),
+        start_new_session=True,
+    ) as proc:
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as exc:
+            duration = round(time.monotonic() - monotonic_started, 2)
+            _terminate_process_group(proc)
+            try:
+                drained_out, drained_err = proc.communicate(timeout=_TIMEOUT_KILL_GRACE_SECONDS)
+            except subprocess.TimeoutExpired as drain_exc:
+                drained_out, drained_err = drain_exc.stdout, drain_exc.stderr
+            stdout = (_as_text(drained_out) or _as_text(exc.stdout)).strip()
+            stderr = (_as_text(drained_err) or _as_text(exc.stderr)).strip()
+            logger.error("Task %s timed out after %ss", task["id"], timeout_seconds)
+            if stdout:
+                logger.info("Task %s partial stdout:\n%s", task["id"], stdout)
+            if stderr:
+                logger.warning("Task %s partial stderr:\n%s", task["id"], stderr)
+            return {
+                "id": task["id"],
+                "slot_id": task.get("slot_id"),
+                "scheduled_for": task.get("scheduled_for"),
+                "newsletter": task["newsletter"],
+                "task_type": task["task_type"],
+                "status": "timeout",
+                "returncode": None,
+                "started_at": started.isoformat(),
+                "finished_at": datetime.now().isoformat(),
+                "duration_seconds": duration,
+                "stdout": stdout,
+                "stderr": stderr,
+            }
 
-        if stdout:
-            logger.info("Task %s stdout:\n%s", task["id"], stdout)
-        if stderr:
-            logger.warning("Task %s stderr:\n%s", task["id"], stderr)
+    duration = round(time.monotonic() - monotonic_started, 2)
+    stdout = _as_text(stdout).strip()
+    stderr = _as_text(stderr).strip()
 
-        status = "success" if completed.returncode == 0 else "failed"
-        logger.info(
-            "Finished task %s with status=%s returncode=%s duration=%ss",
-            task["id"],
-            status,
-            completed.returncode,
-            duration,
-        )
-        return {
-            "id": task["id"],
-            "slot_id": task.get("slot_id"),
-            "scheduled_for": task.get("scheduled_for"),
-            "newsletter": task["newsletter"],
-            "task_type": task["task_type"],
-            "status": status,
-            "returncode": completed.returncode,
-            "started_at": started.isoformat(),
-            "finished_at": datetime.now().isoformat(),
-            "duration_seconds": duration,
-            "stdout": stdout,
-            "stderr": stderr,
-        }
-    except subprocess.TimeoutExpired as exc:
-        duration = round(time.monotonic() - monotonic_started, 2)
-        stdout = (exc.stdout or "").strip()
-        stderr = (exc.stderr or "").strip()
-        logger.error("Task %s timed out after %ss", task["id"], timeout_seconds)
-        if stdout:
-            logger.info("Task %s partial stdout:\n%s", task["id"], stdout)
-        if stderr:
-            logger.warning("Task %s partial stderr:\n%s", task["id"], stderr)
-        return {
-            "id": task["id"],
-            "slot_id": task.get("slot_id"),
-            "scheduled_for": task.get("scheduled_for"),
-            "newsletter": task["newsletter"],
-            "task_type": task["task_type"],
-            "status": "timeout",
-            "returncode": None,
-            "started_at": started.isoformat(),
-            "finished_at": datetime.now().isoformat(),
-            "duration_seconds": duration,
-            "stdout": stdout,
-            "stderr": stderr,
-        }
+    if stdout:
+        logger.info("Task %s stdout:\n%s", task["id"], stdout)
+    if stderr:
+        logger.warning("Task %s stderr:\n%s", task["id"], stderr)
+
+    status = "success" if proc.returncode == 0 else "failed"
+    logger.info(
+        "Finished task %s with status=%s returncode=%s duration=%ss",
+        task["id"],
+        status,
+        proc.returncode,
+        duration,
+    )
+    return {
+        "id": task["id"],
+        "slot_id": task.get("slot_id"),
+        "scheduled_for": task.get("scheduled_for"),
+        "newsletter": task["newsletter"],
+        "task_type": task["task_type"],
+        "status": status,
+        "returncode": proc.returncode,
+        "started_at": started.isoformat(),
+        "finished_at": datetime.now().isoformat(),
+        "duration_seconds": duration,
+        "stdout": stdout,
+        "stderr": stderr,
+    }
 
 
 def alert_overlap(queue: dict, queue_path: Path, lock_path: str, logger: logging.Logger) -> None:
