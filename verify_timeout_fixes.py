@@ -149,6 +149,23 @@ def check_task_timeout_config() -> None:
     assert all(task["timeout_seconds"] == 3000 for task in tasks), {
         task["id"]: task["timeout_seconds"] for task in tasks
     }
+    platform = "/Volumes/SSD/Projects/newsletter-platform"
+    assert all(task["repo_path"] == platform for task in tasks), {
+        task["id"]: task["repo_path"] for task in tasks
+    }
+
+
+def check_platform_task_vectors() -> None:
+    import unittest
+
+    tests_dir = Path(__file__).resolve().parent / "tests"
+    suite = unittest.defaultTestLoader.discover(str(tests_dir), pattern="test_*.py")
+    result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1).run(suite)
+    if not result.wasSuccessful():
+        raise AssertionError(
+            f"platform task tests failed: {len(result.failures)} failures, "
+            f"{len(result.errors)} errors"
+        )
 
 
 def main() -> int:
@@ -162,6 +179,7 @@ def main() -> int:
             ("success_path", lambda: check_success_path_unchanged(tmp, logger)),
             ("process_group_kill", lambda: check_process_group_killed(tmp, logger)),
             ("task_timeout_config", check_task_timeout_config),
+            ("platform_task_vectors", check_platform_task_vectors),
         ]
         for name, fn in checks:
             try:
