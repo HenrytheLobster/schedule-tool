@@ -30,14 +30,17 @@ TASKS = (
     ("run_alexandria_collect", "alexandria", "collect"),
     ("run_alexandria_curate", "alexandria", "curate"),
     ("run_alexandria_write", "alexandria", "write"),
+    ("run_alexandria_publish", "alexandria", "publish"),
     ("run_alexandria_seo", "alexandria", "seo"),
     ("run_newport_collect", "newport", "collect"),
     ("run_newport_curate", "newport", "curate"),
     ("run_newport_write", "newport", "write"),
+    ("run_newport_publish", "newport", "publish"),
     ("run_newport_seo", "newport", "seo"),
     ("run_wasatch_collect", "wasatch", "collect"),
     ("run_wasatch_curate", "wasatch", "curate"),
     ("run_wasatch_write", "wasatch", "write"),
+    ("run_wasatch_publish", "wasatch", "publish"),
     ("run_wasatch_seo", "wasatch", "seo"),
 )
 
@@ -122,6 +125,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     "collect_script",
                     "curate_script",
                     "write_script",
+                    "publish_script",
                     "seo_script",
                 ):
                     script = Path(details[key])
@@ -141,10 +145,12 @@ class PlatformTaskVectorTests(unittest.TestCase):
         now = datetime(2026, 8, 19, 5, 0, tzinfo=ZoneInfo("America/New_York"))
         tasks, slot_ids = build_tasks(load_yaml(CONFIG_PATH), now, logger)
         self.assertEqual(slot_ids, ["wednesday-review"])
-        self.assertEqual(len(tasks), 11)
+        self.assertEqual(len(tasks), 14)
         for task in tasks:
             self.assertEqual(task["repo_path"], PLATFORM_DIR)
-            self.assertIn(task["task_type"], {"collect", "curate", "write", "seo"})
+            self.assertIn(
+                task["task_type"], {"collect", "curate", "write", "publish", "seo"}
+            )
 
     def test_curate_is_queued_after_collect_and_before_write(self) -> None:
         import logging
@@ -185,6 +191,45 @@ class PlatformTaskVectorTests(unittest.TestCase):
                             curate_at,
                             f"{slug}: write must follow curate ({types})",
                         )
+
+    def test_publish_is_queued_after_write(self) -> None:
+        import logging
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        logger = logging.getLogger("test_platform_tasks.publish_order")
+        logger.addHandler(logging.NullHandler())
+        config = load_yaml(CONFIG_PATH)
+        tz = ZoneInfo("America/New_York")
+        slots = (
+            datetime(2026, 8, 17, 5, 0, tzinfo=tz),  # monday-morning: no write
+            datetime(2026, 8, 19, 5, 0, tzinfo=tz),  # wednesday-review
+        )
+        for now in slots:
+            with self.subTest(when=now.isoformat()):
+                tasks, _slot_ids = build_tasks(config, now, logger)
+                by_market: dict[str, list[str]] = {}
+                for task in tasks:
+                    by_market.setdefault(task["newsletter"], []).append(
+                        task["task_type"]
+                    )
+                for slug in ("alexandria", "newport", "wasatch"):
+                    types = by_market[slug]
+                    if "write" not in types:
+                        self.assertNotIn(
+                            "publish",
+                            types,
+                            f"{slug}: publish without write ({types})",
+                        )
+                        continue
+                    self.assertIn("publish", types)
+                    write_at = types.index("write")
+                    publish_at = types.index("publish")
+                    self.assertGreater(
+                        publish_at,
+                        write_at,
+                        f"{slug}: publish must follow write ({types})",
+                    )
 
 
 if __name__ == "__main__":
