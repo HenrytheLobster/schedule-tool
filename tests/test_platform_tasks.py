@@ -28,12 +28,15 @@ CLI_MODULE = "newsletter_engine.cli"
 
 TASKS = (
     ("run_alexandria_collect", "alexandria", "collect"),
+    ("run_alexandria_curate", "alexandria", "curate"),
     ("run_alexandria_write", "alexandria", "write"),
     ("run_alexandria_seo", "alexandria", "seo"),
     ("run_newport_collect", "newport", "collect"),
+    ("run_newport_curate", "newport", "curate"),
     ("run_newport_write", "newport", "write"),
     ("run_newport_seo", "newport", "seo"),
     ("run_wasatch_collect", "wasatch", "collect"),
+    ("run_wasatch_curate", "wasatch", "curate"),
     ("run_wasatch_write", "wasatch", "write"),
     ("run_wasatch_seo", "wasatch", "seo"),
 )
@@ -115,7 +118,12 @@ class PlatformTaskVectorTests(unittest.TestCase):
                         f"{PLATFORM_DIR}/markets/{slug}/"
                     )
                 )
-                for key in ("collect_script", "write_script", "seo_script"):
+                for key in (
+                    "collect_script",
+                    "curate_script",
+                    "write_script",
+                    "seo_script",
+                ):
                     script = Path(details[key])
                     self.assertTrue(script.is_file(), f"missing {key}: {script}")
         self.assertEqual(
@@ -133,10 +141,50 @@ class PlatformTaskVectorTests(unittest.TestCase):
         now = datetime(2026, 8, 19, 5, 0, tzinfo=ZoneInfo("America/New_York"))
         tasks, slot_ids = build_tasks(load_yaml(CONFIG_PATH), now, logger)
         self.assertEqual(slot_ids, ["wednesday-review"])
-        self.assertEqual(len(tasks), 8)
+        self.assertEqual(len(tasks), 11)
         for task in tasks:
             self.assertEqual(task["repo_path"], PLATFORM_DIR)
-            self.assertIn(task["task_type"], {"collect", "write", "seo"})
+            self.assertIn(task["task_type"], {"collect", "curate", "write", "seo"})
+
+    def test_curate_is_queued_after_collect_and_before_write(self) -> None:
+        import logging
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        logger = logging.getLogger("test_platform_tasks.queue_order")
+        logger.addHandler(logging.NullHandler())
+        config = load_yaml(CONFIG_PATH)
+        tz = ZoneInfo("America/New_York")
+        slots = (
+            datetime(2026, 8, 17, 5, 0, tzinfo=tz),  # monday-morning
+            datetime(2026, 8, 19, 5, 0, tzinfo=tz),  # wednesday-review
+        )
+        for now in slots:
+            with self.subTest(when=now.isoformat()):
+                tasks, _slot_ids = build_tasks(config, now, logger)
+                by_market: dict[str, list[str]] = {}
+                for task in tasks:
+                    by_market.setdefault(task["newsletter"], []).append(
+                        task["task_type"]
+                    )
+                for slug in ("alexandria", "newport", "wasatch"):
+                    types = by_market[slug]
+                    self.assertIn("collect", types)
+                    self.assertIn("curate", types)
+                    collect_at = types.index("collect")
+                    curate_at = types.index("curate")
+                    self.assertGreater(
+                        curate_at,
+                        collect_at,
+                        f"{slug}: curate must follow collect ({types})",
+                    )
+                    if "write" in types:
+                        write_at = types.index("write")
+                        self.assertGreater(
+                            write_at,
+                            curate_at,
+                            f"{slug}: write must follow curate ({types})",
+                        )
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ It runs one task at a time on Mike's machine, uses one launchd plist as the sche
 
 ## What it does
 
-- Owns the timing for collect, write, and SEO across all three newsletters.
+- Owns the timing for collect, curate, write, and SEO across all three newsletters.
 - Runs tasks strictly sequentially so the local Ollama runtime is never shared by overlapping jobs.
 - Uses scheduler-owned wrapper scripts under `tasks/` as the execution boundary.
 - Writes a queue JSON before execution, a results JSON after execution, and an append-only JSONL ledger for task history.
@@ -16,9 +16,9 @@ It runs one task at a time on Mike's machine, uses one launchd plist as the sche
 
 All times are in `America/New_York`.
 
-- Monday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria SEO, Wasatch SEO, Newport SEO
+- Monday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria curate, Wasatch curate, Newport curate, Alexandria SEO, Wasatch SEO, Newport SEO
 - Tuesday at `6:00 AM`: Alexandria SEO, Wasatch SEO
-- Wednesday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria write, Wasatch write, Newport write, Alexandria SEO, Wasatch SEO
+- Wednesday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria curate, Wasatch curate, Newport curate, Alexandria write, Wasatch write, Newport write, Alexandria SEO, Wasatch SEO
 - Thursday at `6:00 AM`: Alexandria SEO, Wasatch SEO
 - Friday at `6:00 AM`: Alexandria SEO, Wasatch SEO
 - Saturday at `6:00 AM`: Alexandria SEO, Wasatch SEO
@@ -38,12 +38,15 @@ This is the schedule that will apply after the Saturday, August 15, 2026 update 
 ├── tasks/
 │   ├── common.py
 │   ├── run_alexandria_collect.py
+│   ├── run_alexandria_curate.py
 │   ├── run_alexandria_write.py
 │   ├── run_alexandria_seo.py
 │   ├── run_newport_collect.py
+│   ├── run_newport_curate.py
 │   ├── run_newport_write.py
 │   ├── run_newport_seo.py
 │   ├── run_wasatch_collect.py
+│   ├── run_wasatch_curate.py
 │   ├── run_wasatch_write.py
 │   └── run_wasatch_seo.py
 ├── config_loader.py

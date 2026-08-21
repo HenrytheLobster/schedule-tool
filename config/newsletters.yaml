@@ -3,6 +3,7 @@ newsletters:
     display_name: "Alexandria Newsletter"
     repo_path: "/Volumes/SSD/Projects/newsletter-platform"
     collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_collect.py"
+    curate_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_curate.py"
     write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_write.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_seo.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/alexandria/build/drafts"
@@ -11,6 +12,7 @@ newsletters:
     display_name: "Newport Newsletter"
     repo_path: "/Volumes/SSD/Projects/newsletter-platform"
     collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_collect.py"
+    curate_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_curate.py"
     write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_write.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_seo.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/newport/build/drafts"
@@ -19,6 +21,7 @@ newsletters:
     display_name: "Wasatch Newsletter"
     repo_path: "/Volumes/SSD/Projects/newsletter-platform"
     collect_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_collect.py"
+    curate_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_curate.py"
     write_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_write.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_seo.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/wasatch/build/drafts"
@@ -30,7 +33,7 @@ schedule:
       weekdays: [0]
       hour: 5
       minute: 0
-      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.seo", "wasatch.seo", "newport.seo"]
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.seo", "wasatch.seo", "newport.seo"]
     tuesday-seo:
       weekdays: [1]
       hour: 6
@@ -40,7 +43,7 @@ schedule:
       weekdays: [2]
       hour: 5
       minute: 0
-      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.write", "wasatch.write", "newport.write", "alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.write", "wasatch.write", "newport.write", "alexandria.seo", "wasatch.seo"]
     thursday-seo:
       weekdays: [3]
       hour: 6
