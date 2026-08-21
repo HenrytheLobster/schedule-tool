@@ -87,9 +87,13 @@ The schedule is modeled as named slots. Each slot lists:
 
 The wrappers in `tasks/` are the stable interface the scheduler calls.
 
-- collect and write wrappers call each repo's CLI through that repo's local `.venv`
-- Alexandria and Wasatch SEO wrappers call the repo-owned `scripts/seo_daily.py`
-- Newport SEO uses `newport_newsletter.cli job seo`
+Every wrapper invokes the consolidated platform through one virtualenv:
+
+```text
+/Volumes/SSD/Projects/newsletter-platform/.venv/bin/python -m newsletter_engine.cli --market <id> <job>
+```
+
+`<id>` is `alexandria`, `newport`, or `wasatch`. `<job>` is `collect`, `write`, or `seo`. There is no `job` subcommand. Market identity is an argument on the wrapper, not inferred from cwd.
 
 The wrappers set these runtime defaults:
 
@@ -172,7 +176,7 @@ Email alerts use the SMTP settings from the configured env file in `config/newsl
 
 By default this is:
 
-- `/Volumes/SSD/Projects/alexandria-newsletter/.env`
+- `/Volumes/SSD/Projects/newsletter-platform/markets/alexandria/.env`
 
 Required keys:
 
