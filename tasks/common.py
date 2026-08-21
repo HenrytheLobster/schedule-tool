@@ -5,6 +5,13 @@ import subprocess
 from pathlib import Path
 
 
+# One checkout, one venv, three markets. Market identity is an argument on
+# each task script, never inferred from cwd.
+PLATFORM_DIR = "/Volumes/SSD/Projects/newsletter-platform"
+
+# PYTHONPATH=src still lets `python -m newsletter_engine.cli` resolve against
+# the platform checkout. The provider keys are leftover from the per-repo
+# engines; the platform reads llm settings from market.yaml, not process env.
 DEFAULT_ENV = {
     "PYTHONPATH": "src",
     "LLM_PROVIDER": "ollama",

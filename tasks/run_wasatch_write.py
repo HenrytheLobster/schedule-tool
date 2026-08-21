@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from common import run_repo_module
+from common import PLATFORM_DIR, run_repo_module
 
 
-REPO_DIR = "/Volumes/SSD/Projects/wasatch-newsletter"
+MARKET = "wasatch"
 
 
 def main() -> int:
-    return run_repo_module(REPO_DIR, "newsletter_engine.cli", "job", "write")
+    return run_repo_module(
+        PLATFORM_DIR, "newsletter_engine.cli", "--market", MARKET, "write"
+    )
 
 
 if __name__ == "__main__":
