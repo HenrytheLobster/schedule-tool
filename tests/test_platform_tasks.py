@@ -8,8 +8,10 @@ from __future__ import annotations
 import importlib
 import sys
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TASKS_DIR = ROOT / "tasks"
@@ -42,6 +44,18 @@ TASKS = (
     ("run_wasatch_write", "wasatch", "write"),
     ("run_wasatch_publish", "wasatch", "publish"),
     ("run_wasatch_seo", "wasatch", "seo"),
+)
+
+# One morning slot per weekday. Times match config/newsletters.yaml.
+_ET = ZoneInfo("America/New_York")
+DAILY_SLOTS = (
+    ("monday-morning", datetime(2026, 8, 17, 5, 0, tzinfo=_ET)),
+    ("tuesday-seo", datetime(2026, 8, 18, 6, 0, tzinfo=_ET)),
+    ("wednesday-review", datetime(2026, 8, 19, 5, 0, tzinfo=_ET)),
+    ("thursday-seo", datetime(2026, 8, 20, 6, 0, tzinfo=_ET)),
+    ("friday-seo", datetime(2026, 8, 21, 6, 0, tzinfo=_ET)),
+    ("saturday-seo", datetime(2026, 8, 22, 6, 0, tzinfo=_ET)),
+    ("sunday-seo", datetime(2026, 8, 23, 6, 0, tzinfo=_ET)),
 )
 
 
@@ -192,21 +206,53 @@ class PlatformTaskVectorTests(unittest.TestCase):
                             f"{slug}: write must follow curate ({types})",
                         )
 
+    def test_publish_appears_once_per_market_in_every_daily_slot(self) -> None:
+        import logging
+
+        logger = logging.getLogger("test_platform_tasks.publish_daily")
+        logger.addHandler(logging.NullHandler())
+        config = load_yaml(CONFIG_PATH)
+        for slot_id, now in DAILY_SLOTS:
+            with self.subTest(slot=slot_id):
+                tasks, slot_ids = build_tasks(config, now, logger)
+                self.assertEqual(slot_ids, [slot_id])
+                by_market: dict[str, list[str]] = {}
+                for task in tasks:
+                    by_market.setdefault(task["newsletter"], []).append(
+                        task["task_type"]
+                    )
+                self.assertEqual(
+                    set(by_market),
+                    {"alexandria", "newport", "wasatch"},
+                    f"{slot_id}: missing a market ({sorted(by_market)})",
+                )
+                for slug in ("alexandria", "newport", "wasatch"):
+                    types = by_market[slug]
+                    self.assertEqual(
+                        types.count("publish"),
+                        1,
+                        f"{slot_id} {slug}: publish must appear once ({types})",
+                    )
+                    publish_task = next(
+                        task
+                        for task in tasks
+                        if task["newsletter"] == slug and task["task_type"] == "publish"
+                    )
+                    self.assertTrue(
+                        str(publish_task["script_path"]).endswith(
+                            f"run_{slug}_publish.py"
+                        ),
+                        f"{slot_id} {slug}: unexpected script {publish_task['script_path']}",
+                    )
+
     def test_publish_is_queued_after_write(self) -> None:
         import logging
-        from datetime import datetime
-        from zoneinfo import ZoneInfo
 
         logger = logging.getLogger("test_platform_tasks.publish_order")
         logger.addHandler(logging.NullHandler())
         config = load_yaml(CONFIG_PATH)
-        tz = ZoneInfo("America/New_York")
-        slots = (
-            datetime(2026, 8, 17, 5, 0, tzinfo=tz),  # monday-morning: no write
-            datetime(2026, 8, 19, 5, 0, tzinfo=tz),  # wednesday-review
-        )
-        for now in slots:
-            with self.subTest(when=now.isoformat()):
+        for slot_id, now in DAILY_SLOTS:
+            with self.subTest(slot=slot_id):
                 tasks, _slot_ids = build_tasks(config, now, logger)
                 by_market: dict[str, list[str]] = {}
                 for task in tasks:
@@ -215,20 +261,32 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     )
                 for slug in ("alexandria", "newport", "wasatch"):
                     types = by_market[slug]
-                    if "write" not in types:
-                        self.assertNotIn(
-                            "publish",
-                            types,
-                            f"{slug}: publish without write ({types})",
-                        )
-                        continue
                     self.assertIn("publish", types)
+                    if "write" not in types:
+                        continue
                     write_at = types.index("write")
                     publish_at = types.index("publish")
                     self.assertGreater(
                         publish_at,
                         write_at,
-                        f"{slug}: publish must follow write ({types})",
+                        f"{slot_id} {slug}: publish must follow write ({types})",
+                    )
+
+    def test_publish_wrappers_use_market_publish_command_vector(self) -> None:
+        for module_name, market, job in TASKS:
+            if job != "publish":
+                continue
+            for returncode in (0, 1, 2, 3):
+                with self.subTest(module=module_name, returncode=returncode):
+                    module = importlib.import_module(module_name)
+                    with patch(
+                        "common.subprocess.run", return_value=_Completed(returncode)
+                    ) as run:
+                        rc = module.main()
+                    self.assertEqual(rc, returncode)
+                    self.assertEqual(
+                        run.call_args.args[0],
+                        _expected_command(market, "publish"),
                     )
 
 

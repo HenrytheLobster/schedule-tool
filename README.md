@@ -16,13 +16,13 @@ It runs one task at a time on Mike's machine, uses one launchd plist as the sche
 
 All times are in `America/New_York`.
 
-- Monday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria curate, Wasatch curate, Newport curate, Alexandria SEO, Wasatch SEO, Newport SEO
-- Tuesday at `6:00 AM`: Alexandria SEO, Wasatch SEO
+- Monday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria curate, Wasatch curate, Newport curate, Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO, Newport SEO
+- Tuesday at `6:00 AM`: Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
 - Wednesday at `5:00 AM`: Alexandria collect, Wasatch collect, Newport collect, Alexandria curate, Wasatch curate, Newport curate, Alexandria write, Wasatch write, Newport write, Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
-- Thursday at `6:00 AM`: Alexandria SEO, Wasatch SEO
-- Friday at `6:00 AM`: Alexandria SEO, Wasatch SEO
-- Saturday at `6:00 AM`: Alexandria SEO, Wasatch SEO
-- Sunday at `6:00 AM`: Alexandria SEO, Wasatch SEO
+- Thursday at `6:00 AM`: Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
+- Friday at `6:00 AM`: Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
+- Saturday at `6:00 AM`: Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
+- Sunday at `6:00 AM`: Alexandria publish, Wasatch publish, Newport publish, Alexandria SEO, Wasatch SEO
 
 This is the schedule that will apply after the Saturday, August 15, 2026 update in this repo.
 

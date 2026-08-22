@@ -36,12 +36,12 @@ schedule:
       weekdays: [0]
       hour: 5
       minute: 0
-      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.seo", "wasatch.seo", "newport.seo"]
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo"]
     tuesday-seo:
       weekdays: [1]
       hour: 6
       minute: 0
-      tasks: ["alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo"]
     wednesday-review:
       weekdays: [2]
       hour: 5
@@ -51,22 +51,22 @@ schedule:
       weekdays: [3]
       hour: 6
       minute: 0
-      tasks: ["alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo"]
     friday-seo:
       weekdays: [4]
       hour: 6
       minute: 0
-      tasks: ["alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo"]
     saturday-seo:
       weekdays: [5]
       hour: 6
       minute: 0
-      tasks: ["alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo"]
     sunday-seo:
       weekdays: [6]
       hour: 6
       minute: 0
-      tasks: ["alexandria.seo", "wasatch.seo"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo"]
 
 ollama:
   host: "http://localhost:11434"
