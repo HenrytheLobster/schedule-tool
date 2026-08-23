@@ -71,8 +71,10 @@ schedule:
 ollama:
   host: "http://localhost:11434"
   model: "gemma4:26b"
-  timeout: 3000
-
+  # Per-task kill switch, not a budget for the whole slot. alexandria's
+  # curate measured 64m44s over 2,756 rows on 2026-08-22, which exceeded
+  # the previous 3000s and would have been killed mid-run.
+  timeout: 7200
 alerts:
   enabled: true
   env_file: "/Volumes/SSD/Projects/newsletter-platform/markets/alexandria/.env"
