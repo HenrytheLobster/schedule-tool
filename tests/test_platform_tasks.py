@@ -34,16 +34,19 @@ TASKS = (
     ("run_alexandria_write", "alexandria", "write"),
     ("run_alexandria_publish", "alexandria", "publish"),
     ("run_alexandria_seo", "alexandria", "seo"),
+    ("run_alexandria_images", "alexandria", "images"),
     ("run_newport_collect", "newport", "collect"),
     ("run_newport_curate", "newport", "curate"),
     ("run_newport_write", "newport", "write"),
     ("run_newport_publish", "newport", "publish"),
     ("run_newport_seo", "newport", "seo"),
+    ("run_newport_images", "newport", "images"),
     ("run_wasatch_collect", "wasatch", "collect"),
     ("run_wasatch_curate", "wasatch", "curate"),
     ("run_wasatch_write", "wasatch", "write"),
     ("run_wasatch_publish", "wasatch", "publish"),
     ("run_wasatch_seo", "wasatch", "seo"),
+    ("run_wasatch_images", "wasatch", "images"),
 )
 
 # One morning slot per weekday. Times match config/newsletters.yaml.
@@ -141,6 +144,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     "write_script",
                     "publish_script",
                     "seo_script",
+                    "images_script",
                 ):
                     script = Path(details[key])
                     self.assertTrue(script.is_file(), f"missing {key}: {script}")
@@ -159,11 +163,12 @@ class PlatformTaskVectorTests(unittest.TestCase):
         now = datetime(2026, 8, 19, 5, 0, tzinfo=ZoneInfo("America/New_York"))
         tasks, slot_ids = build_tasks(load_yaml(CONFIG_PATH), now, logger)
         self.assertEqual(slot_ids, ["wednesday-review"])
-        self.assertEqual(len(tasks), 14)
+        self.assertEqual(len(tasks), 17)
         for task in tasks:
             self.assertEqual(task["repo_path"], PLATFORM_DIR)
             self.assertIn(
-                task["task_type"], {"collect", "curate", "write", "publish", "seo"}
+                task["task_type"],
+                {"collect", "curate", "write", "publish", "seo", "images"},
             )
 
     def test_curate_is_queued_after_collect_and_before_write(self) -> None:
@@ -271,6 +276,45 @@ class PlatformTaskVectorTests(unittest.TestCase):
                         write_at,
                         f"{slot_id} {slug}: publish must follow write ({types})",
                     )
+
+    def test_images_is_queued_last_in_every_daily_slot(self) -> None:
+        import logging
+
+        logger = logging.getLogger("test_platform_tasks.images_last")
+        logger.addHandler(logging.NullHandler())
+        config = load_yaml(CONFIG_PATH)
+        for slot_id, now in DAILY_SLOTS:
+            with self.subTest(slot=slot_id):
+                tasks, slot_ids = build_tasks(config, now, logger)
+                self.assertEqual(slot_ids, [slot_id])
+                refs = [f"{task['newsletter']}.{task['task_type']}" for task in tasks]
+                self.assertEqual(
+                    refs[-3:],
+                    ["alexandria.images", "newport.images", "wasatch.images"],
+                    f"{slot_id}: images must sort last ({refs})",
+                )
+                for task in tasks[-3:]:
+                    self.assertTrue(
+                        Path(task["script_path"]).is_file(),
+                        f"{slot_id}: missing {task['script_path']}",
+                    )
+                    self.assertTrue(
+                        str(task["script_path"]).endswith(
+                            f"run_{task['newsletter']}_images.py"
+                        ),
+                        f"{slot_id}: unexpected script {task['script_path']}",
+                    )
+                last_non_images = max(
+                    i for i, task in enumerate(tasks) if task["task_type"] != "images"
+                )
+                first_images = min(
+                    i for i, task in enumerate(tasks) if task["task_type"] == "images"
+                )
+                self.assertGreater(
+                    first_images,
+                    last_non_images,
+                    f"{slot_id}: images must follow all other work ({refs})",
+                )
 
     def test_publish_wrappers_use_market_publish_command_vector(self) -> None:
         for module_name, market, job in TASKS:
