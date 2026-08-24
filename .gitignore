@@ -24,3 +24,6 @@ run_ledger.jsonl
 # OS
 .DS_Store
 .env
+
+# Runtime lock. queue_runner writes it per slot and removes it after.
+scheduler.lock
