@@ -8,6 +8,7 @@ newsletters:
     publish_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_publish.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_images.py"
+    crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_crosslink.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/alexandria/build/drafts"
 
   newport:
@@ -19,6 +20,7 @@ newsletters:
     publish_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_publish.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_images.py"
+    crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_crosslink.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/newport/build/drafts"
 
   wasatch:
@@ -30,6 +32,7 @@ newsletters:
     publish_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_publish.py"
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_images.py"
+    crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_crosslink.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/wasatch/build/drafts"
 
 schedule:
@@ -39,37 +42,37 @@ schedule:
       weekdays: [0]
       hour: 3
       minute: 0
-      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     tuesday-seo:
       weekdays: [1]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     wednesday-review:
       weekdays: [2]
       hour: 3
       minute: 0
-      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.write", "wasatch.write", "newport.write", "alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.collect", "wasatch.collect", "newport.collect", "alexandria.curate", "wasatch.curate", "newport.curate", "alexandria.write", "wasatch.write", "newport.write", "alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     thursday-seo:
       weekdays: [3]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     friday-seo:
       weekdays: [4]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     saturday-seo:
       weekdays: [5]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
     sunday-seo:
       weekdays: [6]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
 
 ollama:
   host: "http://localhost:11434"
