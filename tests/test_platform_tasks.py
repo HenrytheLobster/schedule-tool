@@ -35,30 +35,33 @@ TASKS = (
     ("run_alexandria_publish", "alexandria", "publish"),
     ("run_alexandria_seo", "alexandria", "seo"),
     ("run_alexandria_images", "alexandria", "images"),
+    ("run_alexandria_crosslink", "alexandria", "crosslink"),
     ("run_newport_collect", "newport", "collect"),
     ("run_newport_curate", "newport", "curate"),
     ("run_newport_write", "newport", "write"),
     ("run_newport_publish", "newport", "publish"),
     ("run_newport_seo", "newport", "seo"),
     ("run_newport_images", "newport", "images"),
+    ("run_newport_crosslink", "newport", "crosslink"),
     ("run_wasatch_collect", "wasatch", "collect"),
     ("run_wasatch_curate", "wasatch", "curate"),
     ("run_wasatch_write", "wasatch", "write"),
     ("run_wasatch_publish", "wasatch", "publish"),
     ("run_wasatch_seo", "wasatch", "seo"),
     ("run_wasatch_images", "wasatch", "images"),
+    ("run_wasatch_crosslink", "wasatch", "crosslink"),
 )
 
 # One morning slot per weekday. Times match config/newsletters.yaml.
 _ET = ZoneInfo("America/New_York")
 DAILY_SLOTS = (
-    ("monday-morning", datetime(2026, 8, 17, 5, 0, tzinfo=_ET)),
-    ("tuesday-seo", datetime(2026, 8, 18, 6, 0, tzinfo=_ET)),
-    ("wednesday-review", datetime(2026, 8, 19, 5, 0, tzinfo=_ET)),
-    ("thursday-seo", datetime(2026, 8, 20, 6, 0, tzinfo=_ET)),
-    ("friday-seo", datetime(2026, 8, 21, 6, 0, tzinfo=_ET)),
-    ("saturday-seo", datetime(2026, 8, 22, 6, 0, tzinfo=_ET)),
-    ("sunday-seo", datetime(2026, 8, 23, 6, 0, tzinfo=_ET)),
+    ("monday-morning", datetime(2026, 8, 17, 3, 0, tzinfo=_ET)),
+    ("tuesday-seo", datetime(2026, 8, 18, 3, 0, tzinfo=_ET)),
+    ("wednesday-review", datetime(2026, 8, 19, 3, 0, tzinfo=_ET)),
+    ("thursday-seo", datetime(2026, 8, 20, 3, 0, tzinfo=_ET)),
+    ("friday-seo", datetime(2026, 8, 21, 3, 0, tzinfo=_ET)),
+    ("saturday-seo", datetime(2026, 8, 22, 3, 0, tzinfo=_ET)),
+    ("sunday-seo", datetime(2026, 8, 23, 3, 0, tzinfo=_ET)),
 )
 
 
@@ -145,6 +148,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     "publish_script",
                     "seo_script",
                     "images_script",
+                    "crosslink_script",
                 ):
                     script = Path(details[key])
                     self.assertTrue(script.is_file(), f"missing {key}: {script}")
@@ -160,15 +164,15 @@ class PlatformTaskVectorTests(unittest.TestCase):
 
         logger = logging.getLogger("test_platform_tasks.queue")
         logger.addHandler(logging.NullHandler())
-        now = datetime(2026, 8, 19, 5, 0, tzinfo=ZoneInfo("America/New_York"))
+        now = datetime(2026, 8, 19, 3, 0, tzinfo=ZoneInfo("America/New_York"))
         tasks, slot_ids = build_tasks(load_yaml(CONFIG_PATH), now, logger)
         self.assertEqual(slot_ids, ["wednesday-review"])
-        self.assertEqual(len(tasks), 17)
+        self.assertEqual(len(tasks), 21)
         for task in tasks:
             self.assertEqual(task["repo_path"], PLATFORM_DIR)
             self.assertIn(
                 task["task_type"],
-                {"collect", "curate", "write", "publish", "seo", "images"},
+                {"collect", "curate", "write", "publish", "seo", "images", "crosslink"},
             )
 
     def test_curate_is_queued_after_collect_and_before_write(self) -> None:
@@ -181,8 +185,8 @@ class PlatformTaskVectorTests(unittest.TestCase):
         config = load_yaml(CONFIG_PATH)
         tz = ZoneInfo("America/New_York")
         slots = (
-            datetime(2026, 8, 17, 5, 0, tzinfo=tz),  # monday-morning
-            datetime(2026, 8, 19, 5, 0, tzinfo=tz),  # wednesday-review
+            datetime(2026, 8, 17, 3, 0, tzinfo=tz),  # monday-morning
+            datetime(2026, 8, 19, 3, 0, tzinfo=tz),  # wednesday-review
         )
         for now in slots:
             with self.subTest(when=now.isoformat()):
@@ -277,7 +281,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                         f"{slot_id} {slug}: publish must follow write ({types})",
                     )
 
-    def test_images_is_queued_last_in_every_daily_slot(self) -> None:
+    def test_images_run_after_seo_and_before_crosslink_in_every_daily_slot(self) -> None:
         import logging
 
         logger = logging.getLogger("test_platform_tasks.images_last")
@@ -289,11 +293,16 @@ class PlatformTaskVectorTests(unittest.TestCase):
                 self.assertEqual(slot_ids, [slot_id])
                 refs = [f"{task['newsletter']}.{task['task_type']}" for task in tasks]
                 self.assertEqual(
-                    refs[-3:],
+                    refs[-6:-3],
                     ["alexandria.images", "newport.images", "wasatch.images"],
-                    f"{slot_id}: images must sort last ({refs})",
+                    f"{slot_id}: unexpected image ordering ({refs})",
                 )
-                for task in tasks[-3:]:
+                self.assertEqual(
+                    refs[-3:],
+                    ["alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"],
+                    f"{slot_id}: crosslink must follow images ({refs})",
+                )
+                for task in tasks[-6:-3]:
                     self.assertTrue(
                         Path(task["script_path"]).is_file(),
                         f"{slot_id}: missing {task['script_path']}",
@@ -304,16 +313,29 @@ class PlatformTaskVectorTests(unittest.TestCase):
                         ),
                         f"{slot_id}: unexpected script {task['script_path']}",
                     )
-                last_non_images = max(
-                    i for i, task in enumerate(tasks) if task["task_type"] != "images"
+                last_pre_image = max(
+                    i
+                    for i, task in enumerate(tasks)
+                    if task["task_type"] not in {"images", "crosslink"}
                 )
                 first_images = min(
                     i for i, task in enumerate(tasks) if task["task_type"] == "images"
                 )
                 self.assertGreater(
                     first_images,
-                    last_non_images,
-                    f"{slot_id}: images must follow all other work ({refs})",
+                    last_pre_image,
+                    f"{slot_id}: images must follow SEO and production work ({refs})",
+                )
+
+    def test_shipped_config_has_no_gpu_pseudo_newsletter_or_tasks(self) -> None:
+        config = load_yaml(CONFIG_PATH)
+
+        self.assertNotIn("gpu", config["newsletters"])
+        for slot_id, slot in config["schedule"]["slots"].items():
+            with self.subTest(slot=slot_id):
+                self.assertFalse(
+                    any(str(task).startswith("gpu.") for task in slot["tasks"]),
+                    f"{slot_id}: obsolete GPU lifecycle task remains",
                 )
 
     def test_publish_wrappers_use_market_publish_command_vector(self) -> None:
