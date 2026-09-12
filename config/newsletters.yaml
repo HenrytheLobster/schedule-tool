@@ -9,6 +9,7 @@ newsletters:
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_images.py"
     crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_crosslink.py"
+    measure_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_alexandria_measure.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/alexandria/build/drafts"
 
   newport:
@@ -21,6 +22,7 @@ newsletters:
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_images.py"
     crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_crosslink.py"
+    measure_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_newport_measure.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/newport/build/drafts"
 
   wasatch:
@@ -33,6 +35,7 @@ newsletters:
     seo_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_seo.py"
     images_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_images.py"
     crosslink_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_crosslink.py"
+    measure_script: "/Volumes/SSD/Projects/schedule-tool/tasks/run_wasatch_measure.py"
     output_dir: "/Volumes/SSD/Projects/newsletter-platform/markets/wasatch/build/drafts"
 
 schedule:
@@ -72,7 +75,7 @@ schedule:
       weekdays: [6]
       hour: 3
       minute: 0
-      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"]
+      tasks: ["alexandria.publish", "wasatch.publish", "newport.publish", "alexandria.seo", "wasatch.seo", "newport.seo", "alexandria.images", "newport.images", "wasatch.images", "alexandria.crosslink", "newport.crosslink", "wasatch.crosslink", "alexandria.measure", "newport.measure", "wasatch.measure"]
 
 ollama:
   host: "http://localhost:11434"

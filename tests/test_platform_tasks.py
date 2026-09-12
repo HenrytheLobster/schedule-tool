@@ -36,6 +36,7 @@ TASKS = (
     ("run_alexandria_seo", "alexandria", "seo"),
     ("run_alexandria_images", "alexandria", "images"),
     ("run_alexandria_crosslink", "alexandria", "crosslink"),
+    ("run_alexandria_measure", "alexandria", "measure"),
     ("run_newport_collect", "newport", "collect"),
     ("run_newport_curate", "newport", "curate"),
     ("run_newport_write", "newport", "write"),
@@ -43,6 +44,7 @@ TASKS = (
     ("run_newport_seo", "newport", "seo"),
     ("run_newport_images", "newport", "images"),
     ("run_newport_crosslink", "newport", "crosslink"),
+    ("run_newport_measure", "newport", "measure"),
     ("run_wasatch_collect", "wasatch", "collect"),
     ("run_wasatch_curate", "wasatch", "curate"),
     ("run_wasatch_write", "wasatch", "write"),
@@ -50,6 +52,7 @@ TASKS = (
     ("run_wasatch_seo", "wasatch", "seo"),
     ("run_wasatch_images", "wasatch", "images"),
     ("run_wasatch_crosslink", "wasatch", "crosslink"),
+    ("run_wasatch_measure", "wasatch", "measure"),
 )
 
 # One morning slot per weekday. Times match config/newsletters.yaml.
@@ -149,6 +152,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     "seo_script",
                     "images_script",
                     "crosslink_script",
+                    "measure_script",
                 ):
                     script = Path(details[key])
                     self.assertTrue(script.is_file(), f"missing {key}: {script}")
@@ -292,17 +296,18 @@ class PlatformTaskVectorTests(unittest.TestCase):
                 tasks, slot_ids = build_tasks(config, now, logger)
                 self.assertEqual(slot_ids, [slot_id])
                 refs = [f"{task['newsletter']}.{task['task_type']}" for task in tasks]
+                production_refs = [ref for ref in refs if not ref.endswith(".measure")]
                 self.assertEqual(
-                    refs[-6:-3],
+                    production_refs[-6:-3],
                     ["alexandria.images", "newport.images", "wasatch.images"],
                     f"{slot_id}: unexpected image ordering ({refs})",
                 )
                 self.assertEqual(
-                    refs[-3:],
+                    production_refs[-3:],
                     ["alexandria.crosslink", "newport.crosslink", "wasatch.crosslink"],
                     f"{slot_id}: crosslink must follow images ({refs})",
                 )
-                for task in tasks[-6:-3]:
+                for task in [task for task in tasks if task["task_type"] == "images"]:
                     self.assertTrue(
                         Path(task["script_path"]).is_file(),
                         f"{slot_id}: missing {task['script_path']}",
@@ -317,6 +322,7 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     i
                     for i, task in enumerate(tasks)
                     if task["task_type"] not in {"images", "crosslink"}
+                    and task["task_type"] != "measure"
                 )
                 first_images = min(
                     i for i, task in enumerate(tasks) if task["task_type"] == "images"
@@ -326,6 +332,23 @@ class PlatformTaskVectorTests(unittest.TestCase):
                     last_pre_image,
                     f"{slot_id}: images must follow SEO and production work ({refs})",
                 )
+
+    def test_measure_runs_once_per_market_after_sunday_production(self) -> None:
+        import logging
+
+        logger = logging.getLogger("test_platform_tasks.measure_weekly")
+        logger.addHandler(logging.NullHandler())
+        config = load_yaml(CONFIG_PATH)
+        sunday = datetime(2026, 8, 23, 3, 0, tzinfo=_ET)
+        tasks, slot_ids = build_tasks(config, sunday, logger)
+        self.assertEqual(slot_ids, ["sunday-seo"])
+        refs = [f"{task['newsletter']}.{task['task_type']}" for task in tasks]
+        self.assertEqual(
+            refs[-3:],
+            ["alexandria.measure", "newport.measure", "wasatch.measure"],
+        )
+        for slug in ("alexandria", "newport", "wasatch"):
+            self.assertEqual(refs.count(f"{slug}.measure"), 1)
 
     def test_shipped_config_has_no_gpu_pseudo_newsletter_or_tasks(self) -> None:
         config = load_yaml(CONFIG_PATH)
